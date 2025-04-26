@@ -23,8 +23,6 @@ app.add_middleware(
 app.include_router(expenses.router)
 app.include_router(income.router)
 app.include_router(students.router)
-app.include_router(enrollments.router)
-app.include_router(calendar_events.router)
 
 @app.get("/")
 async def read_root():
