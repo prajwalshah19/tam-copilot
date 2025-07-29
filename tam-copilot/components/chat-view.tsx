@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { executeProcessQuery } from "@/services/query"
 import { TypingIndicator } from "@/components/typing-indicator"
+import ReactMarkdown from "react-markdown"
 
 interface Message {
   id: string 
@@ -28,6 +29,12 @@ export function ChatView() {
     }
   ])
 
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages, isLoading])
+
   const handleSendMessage = async (message: string) => {
     console.log("Sending message:", message)
     if (!message.trim()) return
@@ -45,11 +52,12 @@ export function ChatView() {
 
     try {
       // Get AI response using executeProcessQuery
-      const response = await executeProcessQuery(message)
-      
+      let response = await executeProcessQuery(message)
+      // Remove erroneous new lines (multiple consecutive newlines to single, trim)
+      response = response.toString().replace(/\n{2,}/g, '\n').trim()
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: response.toString(),
+        content: response,
         sender: "ai",
         timestamp: new Date(),
       }
@@ -71,33 +79,36 @@ export function ChatView() {
 
   return (
     <div className="container mx-auto p-4 h-screen flex flex-col">
-      <Card className="flex flex-col h-full">
+      <Card className="flex flex-col h-full max-h-[90vh] w-full max-w-xl mx-auto">
         <CardHeader>
           <CardTitle className="text-primary">TAM Copilot Chat</CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 overflow-auto">
-          <div className="space-y-4">
+        <CardContent className="flex-1 min-h-0 overflow-y-auto">
+          <div className="flex flex-col gap-4 w-full min-h-full justify-end">
             {messages.map((message) => (
               <div
                 key={message.id}
                 className={cn(
-                  "flex w-max max-w-[80%] rounded-lg p-4",
-                  message.sender === "user" ? "ml-auto bg-primary text-primary-foreground" : "bg-muted",
+                  "max-w-full sm:max-w-[70%] rounded-lg p-4 break-words",
+                  message.sender === "user"
+                    ? "self-end bg-primary text-primary-foreground text-right"
+                    : "self-start bg-muted text-left"
                 )}
               >
                 <div className="whitespace-pre-wrap break-words overflow-hidden">
-                  {message.content}
+                  {message.content.split(/\r?\n/).map((line, idx) => (
+                    <ReactMarkdown key={idx}>{line}</ReactMarkdown>
+                  ))}
                 </div>
               </div>
             ))}
-          </div>
-
-
-          {isLoading && (
-              <div className="flex w-max max-w-[80%] rounded-lg p-4 bg-muted">
+            {isLoading && (
+              <div className="max-w-full sm:max-w-[70%] self-start rounded-lg p-4 bg-muted">
                 <TypingIndicator />
               </div>
-          )}
+            )}
+            <div ref={messagesEndRef} />
+          </div>
         </CardContent>
         <CardFooter>
           <div className="flex w-full items-center space-x-2">

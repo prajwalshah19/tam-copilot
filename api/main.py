@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from foundry import client
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from routers import expenses, income, students, enrollments, calendar_events
+from routers import expenses, income, students
 
 app = FastAPI(
     title="TAM Copilot API",

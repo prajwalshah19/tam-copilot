@@ -66,4 +66,5 @@ async def get_students_endpoint():
         
         return students
     except Exception as e:
+        print(f"Error fetching students: {e}")
         raise HTTPException(status_code=500, detail=str(e)) 
